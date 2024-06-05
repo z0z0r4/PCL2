@@ -742,7 +742,7 @@ NoSubtitle:
             If Tag.StartsWithF("/") Then Storage.CurseForgeTotal = 0
             If Storage.CurseForgeTotal > -1 AndAlso Storage.CurseForgeTotal <= Storage.CurseForgeOffset Then Return Nothing
             '应用筛选参数
-            Dim Address As String = $"https://api.curseforge.com/v1/mods/search?gameId=432&sortField=2&sortOrder=desc&pageSize={CompPageSize}"
+            Dim Address As String = $"https://mcim.z0z0r4.top/v1/curseforge/mods/search?gameId=432&sortField=2&sortOrder=desc&pageSize={CompPageSize}"
             Select Case Type
                 Case CompType.Mod
                     Address += "&classId=6"
@@ -766,7 +766,7 @@ NoSubtitle:
             If Tag.EndsWithF("/") Then Storage.ModrinthTotal = 0
             If Storage.ModrinthTotal > -1 AndAlso Storage.ModrinthTotal <= Storage.ModrinthOffset Then Return Nothing
             '应用筛选参数
-            Dim Address As String = $"https://api.modrinth.com/v2/search?limit={CompPageSize}&index=relevance"
+            Dim Address As String = $"https://mcim.z0z0r4.top/v1/modrinth/search?limit={CompPageSize}&index=relevance"
             If Not String.IsNullOrEmpty(SearchText) Then Address += "&query=" & Net.WebUtility.UrlEncode(SearchText)
             If Storage.ModrinthOffset > 0 Then Address += "&offset=" & Storage.ModrinthOffset
             'facets=[["categories:'game-mechanics'"],["categories:'forge'"],["versions:1.19.3"],["project_type:mod"]]
@@ -1426,9 +1426,9 @@ Retry:
         If CompProjectCache.ContainsKey(ProjectId) Then '存在缓存
             TargetProject = CompProjectCache(ProjectId)
         ElseIf FromCurseForge Then 'CurseForge
-            TargetProject = New CompProject(NetGetCodeByRequestRetry("https://api.curseforge.com/v1/mods/" & ProjectId, IsJson:=True, Encode:=Encoding.UTF8)("data"))
+            TargetProject = New CompProject(NetGetCodeByRequestRetry("https://mcim.z0z0r4.top/v1/curseforge/mods/" & ProjectId, IsJson:=True, Encode:=Encoding.UTF8)("data"))
         Else 'Modrinth
-            TargetProject = New CompProject(NetGetCodeByRequestRetry("https://api.modrinth.com/v2/project/" & ProjectId, IsJson:=True, Encode:=Encoding.UTF8))
+            TargetProject = New CompProject(NetGetCodeByRequestRetry("https://mcim.z0z0r4.top/v1/modrinth/project/" & ProjectId, IsJson:=True, Encode:=Encoding.UTF8))
         End If
         '获取工程对象的文件列表
         Log("[Comp] 开始获取文件列表：" & ProjectId)
@@ -1436,13 +1436,13 @@ Retry:
         If FromCurseForge Then
             'CurseForge
             If TargetProject.Type = CompType.Mod Then 'Mod 使用每个版本最新的文件
-                ResultJsonArray = GetJson(NetRequestRetry("https://api.curseforge.com/v1/mods/files", "POST", "{""fileIds"": [" & Join(TargetProject.CurseForgeFileIds, ",") & "]}", "application/json"))("data")
+                ResultJsonArray = GetJson(NetRequestRetry("https://mcim.z0z0r4.top/v1/curseforge/mods/files", "POST", "{""fileIds"": [" & Join(TargetProject.CurseForgeFileIds, ",") & "]}", "application/json"))("data")
             Else '否则使用全部文件
-                ResultJsonArray = NetGetCodeByRequestRetry($"https://api.curseforge.com/v1/mods/{ProjectId}/files?pageSize=999", Accept:="application/json", IsJson:=True)("data")
+                ResultJsonArray = NetGetCodeByRequestRetry($"https://mcim.z0z0r4.top/v1/curseforge/mods/{ProjectId}/files?pageSize=999", Accept:="application/json", IsJson:=True)("data")
             End If
         Else
             'Modrinth
-            ResultJsonArray = NetGetCodeByRequestRetry($"https://api.modrinth.com/v2/project/{ProjectId}/version", Accept:="application/json", IsJson:=True)
+            ResultJsonArray = NetGetCodeByRequestRetry($"https://mcim.z0z0r4.top/v1/modrinth/project/{ProjectId}/version", Accept:="application/json", IsJson:=True)
         End If
         CompFilesCache(ProjectId) = ResultJsonArray.Select(Function(a) New CompFile(a, TargetProject.Type)).
             Where(Function(a) a.Available).ToList.Distinct(Function(a, b) a.Id = b.Id) 'CurseForge 可能会重复返回相同项（#1330）
@@ -1456,10 +1456,10 @@ Retry:
             Log($"[Comp] {ProjectId} 文件列表中还需要获取信息的前置 Mod：{Join(UndoneDeps, "，")}")
             Dim Projects As JArray
             If TargetProject.FromCurseForge Then
-                Projects = GetJson(NetRequestRetry("https://api.curseforge.com/v1/mods",
+                Projects = GetJson(NetRequestRetry("https://mcim.z0z0r4.top/v1/curseforge/mods",
                     "POST", "{""modIds"": [" & Join(UndoneDeps, ",") & "]}", "application/json"))("data")
             Else
-                Projects = NetGetCodeByRequestRetry($"https://api.modrinth.com/v2/projects?ids=[""{Join(UndoneDeps, """,""")}""]",
+                Projects = NetGetCodeByRequestRetry($"https://mcim.z0z0r4.top/v1/modrinth/projects?ids=[""{Join(UndoneDeps, """,""")}""]",
                     Accept:="application/json", IsJson:=True)
             End If
             For Each Project In Projects

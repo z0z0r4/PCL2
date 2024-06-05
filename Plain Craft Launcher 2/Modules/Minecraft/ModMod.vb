@@ -957,7 +957,7 @@ Finished:
             Try
                 '步骤 1：获取 Hash 与对应的工程 ID
                 Dim ModrinthHashes = Mods.Select(Function(m) m.ModrinthHash).ToList()
-                Dim ModrinthVersion = CType(GetJson(NetRequestRetry("https://api.modrinth.com/v2/version_files", "POST",
+                Dim ModrinthVersion = CType(GetJson(NetRequestRetry("https://mcim.z0z0r4.top/v1/modrinth/version_files", "POST",
                     $"{{""hashes"": [""{ModrinthHashes.Join(""",""")}""], ""algorithm"": ""sha1""}}", "application/json")), JObject)
                 Log($"[Mod] 从 Modrinth 获取到 {ModrinthVersion.Count} 个本地 Mod 的对应信息")
                 '步骤 2：尝试读取工程信息缓存，构建其他 Mod 的对应关系
@@ -979,7 +979,7 @@ Finished:
                 '步骤 3：获取工程信息
                 If Not ModrinthMapping.Any() Then Exit Sub
                 Dim ModrinthProject = CType(GetJson(NetRequestRetry(
-                    $"https://api.modrinth.com/v2/projects?ids=[""{ModrinthMapping.Keys.Join(""",""")}""]",
+                    $"https://mcim.z0z0r4.top/v1/modrinth/projects?ids=[""{ModrinthMapping.Keys.Join(""",""")}""]",
                     "GET", "", "application/json")), JArray)
                 For Each ProjectJson In ModrinthProject
                     Dim Project As New CompProject(ProjectJson)
@@ -990,7 +990,7 @@ Finished:
                 Next
                 Log($"[Mod] 已从 Modrinth 获取本地 Mod 信息，继续获取更新信息")
                 '步骤 4：获取更新信息
-                Dim ModrinthUpdate = CType(GetJson(NetRequestRetry("https://api.modrinth.com/v2/version_files/update", "POST",
+                Dim ModrinthUpdate = CType(GetJson(NetRequestRetry("https://mcim.z0z0r4.top/v1/modrinth/version_files/update", "POST",
                     $"{{""hashes"": [""{ModrinthMapping.SelectMany(Function(l) l.Value.Select(Function(m) m.ModrinthHash)).Join(""",""")}""], ""algorithm"": ""sha1"", 
                     ""loaders"": [""{ModLoaders.Join(""",""").ToLower}""],""game_versions"": [""{McVersion}""]}}", "application/json")), JObject)
                 For Each Entry In Mods
@@ -1027,7 +1027,7 @@ Finished:
                     CurseForgeHashes.Add(Entry.CurseForgeHash)
                     If Loader.IsAbortedWithThread(MainThread) Then Exit Sub
                 Next
-                Dim CurseForgeRaw = CType(CType(GetJson(NetRequestRetry("https://api.curseforge.com/v1/fingerprints/432/", "POST",
+                Dim CurseForgeRaw = CType(CType(GetJson(NetRequestRetry("https://mcim.z0z0r4.top/v1/curseforge/fingerprints/432/", "POST",
                                     $"{{""fingerprints"": [{CurseForgeHashes.Join(",")}]}}", "application/json")), JObject)("data")("exactMatches"), JContainer)
                 Log($"[Mod] 从 CurseForge 获取到 {CurseForgeRaw.Count} 个本地 Mod 的对应信息")
                 '步骤 2：尝试读取工程信息缓存，构建其他 Mod 的对应关系
@@ -1050,7 +1050,7 @@ Finished:
                 Log($"[Mod] 需要从 CurseForge 获取 {CurseForgeMapping.Count} 个本地 Mod 的工程信息")
                 '步骤 3：获取工程信息
                 If Not CurseForgeMapping.Any() Then Exit Sub
-                Dim CurseForgeProject = CType(GetJson(NetRequestRetry("https://api.curseforge.com/v1/mods", "POST",
+                Dim CurseForgeProject = CType(GetJson(NetRequestRetry("https://mcim.z0z0r4.top/v1/curseforge/mods", "POST",
                                     $"{{""modIds"": [{CurseForgeMapping.Keys.Join(",")}]}}", "application/json")), JObject)("data")
                 Dim UpdateFileIds As New Dictionary(Of Integer, List(Of McMod)) 'FileId -> 本地 Mod 文件列表
                 Dim FileIdToProjectSlug As New Dictionary(Of Integer, String)
@@ -1092,7 +1092,7 @@ Finished:
                 Log($"[Mod] 已从 CurseForge 获取本地 Mod 信息，需要获取 {UpdateFileIds.Count} 个用于检查更新的文件信息")
                 '步骤 4：获取更新文件信息
                 If Not UpdateFileIds.Any() Then Exit Sub
-                Dim CurseForgeFiles = CType(GetJson(NetRequestRetry("https://api.curseforge.com/v1/mods/files", "POST",
+                Dim CurseForgeFiles = CType(GetJson(NetRequestRetry("https://mcim.z0z0r4.top/v1/curseforge/mods/files", "POST",
                                     $"{{""fileIds"": [{UpdateFileIds.Keys.Join(",")}]}}", "application/json")), JObject)("data")
                 Dim UpdateFiles As New Dictionary(Of McMod, CompFile)
                 For Each FileJson In CurseForgeFiles
